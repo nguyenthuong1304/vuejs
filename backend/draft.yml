@@ -1,0 +1,22 @@
+models:
+  Models\Post:
+    title: string:200
+    content: longtext
+    status: enum:pending,successful,failed
+    published_at: nullable timestamp
+    softDeletes
+
+controllers:
+  Post:
+    index:
+      query: all
+      render: post.index with:posts
+
+    store:
+      validate: title, content
+      save: post
+      send: ReviewNotification to:post.author with:post
+      dispatch: SyncMedia with:post
+      fire: NewPost with:post
+      flash: post.title
+      redirect: post.index

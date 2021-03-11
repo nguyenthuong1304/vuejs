@@ -1,0 +1,73 @@
+version: "3"
+volumes:
+  docker-volume:
+
+services:
+  # nginx
+  web:
+    container_name: nginx
+    image: nginx:1.18
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - .:/var/www/html
+    depends_on:
+      - app
+    networks:
+      - my_network
+
+  # PHP
+  app:
+    container_name: api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html
+      - ~/.bashrc:/root/.bashrc
+    links:
+      - db
+    networks:
+      - my_network
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: "npm run serve"
+    ports:
+      - "3000:8080"
+    volumes:
+      - .:/var/www/html
+      - ~/.bashrc:/root/.bashrc
+    networks:
+      - my_network
+  #Mysql
+  db:
+    container_name: mysql
+    image: mysql:5.7
+    ports:
+      - "33069:3306"
+    environment:
+      MYSQL_DATABASE: crud_template
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      TZ: "Asia/Ho_Chi_Minh"
+    command:
+      [
+        "mysqld",
+        "--character-set-server=utf8mb4",
+        "--collation-server=utf8mb4_unicode_ci"
+      ]
+    volumes:
+      - docker-volume:/var/lib/mysql
+    networks:
+      my_network:
+        ipv4_address: 172.22.3.9
+
+networks:
+  my_network:
+    ipam:
+      config:
+        - subnet: 172.22.3.0/24
